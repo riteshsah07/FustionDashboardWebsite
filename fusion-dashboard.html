@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Strategic Fusion Dashboard</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    body { margin:0; font-family: Arial, sans-serif; }
+    #map { height: 100vh; width: 100%; }
+    .sidebar { position: absolute; top: 10px; left: 10px; width: 320px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; }
+    .marker { background: #e74c3c; color: white; padding: 4px 8px; border-radius: 50%; font-size: 12px; }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <h2>Strategic Fusion Dashboard</h2>
+  <h3>Intelligence Sources</h3>
+  <button onclick="addMockData('OSINT')">Load OSINT (S3 + MongoDB)</button><br><br>
+  <button onclick="addMockData('HUMINT')">Load HUMINT (CSV/JSON)</button><br><br>
+  <button onclick="addMockData('IMINT')">Load IMINT (Images)</button><br><br>
+  <input type="file" id="imageUpload" accept="image/*" multiple style="margin-top:10px;">
+  <p><small>Drag & drop images or click to upload IMINT</small></p>
+</div>
+
+<div id="map"></div>
+
+<script>
+  const map = L.map('map').setView([28.6139, 77.2090], 10);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  const markers = [];
+
+  function addMarker(lat, lng, type, title, desc, img = null) {
+    const color = type === 'OSINT' ? 'blue' : type === 'HUMINT' ? 'green' : 'red';
+    const marker = L.marker([lat, lng], {
+      icon: L.divIcon({ className: `marker`, html: `<div style="background:${color}; color:white; padding:4px 8px; border-radius:50%; font-size:12px;">${type[0]}</div>` })
+    }).addTo(map);
+
+    let popupContent = `<b>${title}</b><br><small>${type} • ${desc}</small>`;
+    if (img) popupContent += `<br><img src="${img}" width="180" style="margin-top:8px; border-radius:6px;">`;
+
+    marker.bindPopup(popupContent);
+    marker.on('mouseover', () => marker.openPopup());
+    markers.push(marker);
+  }
+
+  // Mock Data Ingestion
+  function addMockData(type) {
+    if (type === 'OSINT') {
+      addMarker(28.6139, 77.2090, 'OSINT', 'Terror Alert - Delhi', 'Social media chatter + news report', null);
+      addMarker(28.7041, 77.1025, 'OSINT', 'Border Movement', 'Satellite + open source tracking', null);
+    } else if (type === 'HUMINT') {
+      addMarker(28.5355, 77.3910, 'HUMINT', 'Field Report - Noida', 'Informant input on suspicious activity', null);
+    } else if (type === 'IMINT') {
+      addMarker(28.4595, 77.0266, 'IMINT', 'Suspect Vehicle', 'Captured via drone', 'https://picsum.photos/id/1015/300/200');
+    }
+    alert(`${type} data loaded successfully!`);
+  }
+
+  // Drag & Drop Image Upload
+  const dropArea = document.getElementById('map');
+  dropArea.ondragover = e => e.preventDefault();
+  dropArea.ondrop = e => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        addMarker(28.6, 77.2, 'IMINT', 'Uploaded Imagery', 'User uploaded IMINT', ev.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Initial demo data
+  setTimeout(() => {
+    addMarker(28.6139, 77.2090, 'OSINT', 'OSINT - Social Media Spike', 'High activity detected', null);
+    addMarker(28.7041, 77.1025, 'HUMINT', 'HUMINT Field Report', 'Local informant input', null);
+    addMarker(28.5355, 77.3910, 'IMINT', 'IMINT - Satellite Image', 'Visual confirmation', 'https://picsum.photos/id/201/300/200');
+  }, 800);
+
+</script>
+</body>
+</html>
